@@ -1,11 +1,8 @@
-dist
-cabal-dev
-*.o
 *.hi
-*.chi
-*.chs.h
-.virtualenv
-.hsenv
+*.o
+*.log
 .cabal-sandbox/
 cabal.sandbox.config
-cabal.config
+dist/
+libs/
+data/
