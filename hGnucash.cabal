@@ -35,5 +35,6 @@ executable hGnucash
                      , safe >= 0.3
                      , exceptions >= 0.6
                      , optparse-applicative
-                     , hexpat
-                     , hexpat-pickle
+                     , xml-types
+                     , xml-picklers
+                     , xml-conduit
