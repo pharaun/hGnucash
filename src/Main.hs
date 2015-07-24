@@ -33,7 +33,7 @@ process filename = do
                     (CountData "account" 49)
                     (CountData "transaction" 903)
                     [Commodity "2.0.0" (SpaceId "ISO4217" "USD") "currency"]
-                    (PriceDb "2.0.0"
+                    (Just $ PriceDb "2.0.0"
                         [ Price
                             (PriceId "guid" "c6e71724e737f4e5c7f5e1eaa60a1e32")
                             (SpaceId "ISO4217" "CNY")
@@ -43,12 +43,13 @@ process filename = do
                             "579/3737"
                         ]
                     )
-                    [ Account "2.0.0" "Foobar" (AccountId "guid" "6149d1c96c021e5f5d0ff886718b7f7d") "ROOT" Nothing 0 Nothing Nothing
+                    [ Account "2.0.0" "Foobar" (AccountId "guid" "6149d1c96c021e5f5d0ff886718b7f7d") "ROOT" Nothing Nothing Nothing Nothing Nothing
                     , Account "2.0.0" "Foobar"
                         (AccountId "guid" "6149d1c96c021e5f5d0ff886718b7f7d")
                         "BANK"
                         (Just $ SpaceId "ISO4217" "USD")
-                        0
+                        (Just 100)
+                        (Just "Unknown")
                         (Just $ AccountSlots
                             [ Slot "placeholder" "string" (Left "true")
                             , Slot "reconcile-info" "frame" (Right
@@ -99,7 +100,7 @@ data GnuCashBook = GnuCashBook
     , countAccount :: CountData
     , countTransaction :: CountData
     , commoditys :: [Commodity]
-    , priceDb :: PriceDb
+    , priceDb :: Maybe PriceDb
     , accounts :: [Account]
     } deriving (Show, Eq)
 
@@ -109,7 +110,8 @@ data Account = Account
     , aGuid :: AccountId
     , aType :: T.Text
     , aCommodity :: Maybe SpaceId
-    , aCommodityScu :: Integer
+    , aCommodityScu :: Maybe Integer
+    , aDescription :: Maybe T.Text
     , aSlots :: Maybe AccountSlots
     , aParent :: Maybe AccountParentId
     } deriving (Show, Eq)
@@ -208,9 +210,8 @@ xpBooks =
         (\(version, (guid, account, transaction, commodity, priceDb, accountList)) -> GnuCashBook version guid account transaction commodity priceDb accountList)
         (\(GnuCashBook version guid account transaction commodity priceDb accountList) -> (version, (guid, account, transaction, commodity, priceDb, accountList)))
         (xpElem "{http://www.gnucash.org/XML/gnc}book" (xpAttr "version" xpText)
-            (xp6Tuple xpBookId xpCountData xpCountData (xpList xpCommodity) xpPriceDb (xpList xpAccount))
+            (xp6Tuple xpBookId xpCountData xpCountData (xpList xpCommodity) (xpOption xpPriceDb) (xpList xpAccount))
         )
-
 
 xpBookId :: PU [XT.Node] BookId
 xpBookId =
@@ -301,8 +302,8 @@ xpAccountParentId =
 xpAccount :: PU [XT.Node] Account
 xpAccount =
     xpWrap
-        (\(version, ((name, guid, aType), (commodity, commodityScu, slots, parent))) -> Account version name guid aType commodity commodityScu slots parent)
-        (\(Account version name guid aType commodity commodityScu slots parent) -> (version, ((name, guid, aType), (commodity, commodityScu, slots, parent))))
+        (\(version, ((name, guid, aType), (commodity, commodityScu, desc, slots, parent))) -> Account version name guid aType commodity commodityScu desc slots parent)
+        (\(Account version name guid aType commodity commodityScu desc slots parent) -> (version, ((name, guid, aType), (commodity, commodityScu, desc, slots, parent))))
         (xpElem "{http://www.gnucash.org/XML/gnc}account" (xpAttr "version" xpText)
             (xp2Tuple
                 (xp3Tuple
@@ -310,9 +311,10 @@ xpAccount =
                     xpAccountId
                     (xpElemText "{http://www.gnucash.org/XML/act}type")
                 )
-                (xp4Tuple
+                (xp5Tuple
                     (xpOption (xpElemNodes "{http://www.gnucash.org/XML/act}commodity" xpSpaceId))
-                    (xpElemNodes "{http://www.gnucash.org/XML/act}commodity-scu" (xpContent xpPrim))
+                    (xpOption (xpElemNodes "{http://www.gnucash.org/XML/act}commodity-scu" (xpContent xpPrim)))
+                    (xpOption (xpElemNodes "{http://www.gnucash.org/XML/act}description" (xpContent xpText)))
                     (xpOption xpAccountSlots)
                     (xpOption xpAccountParentId)
                 )
