@@ -3,6 +3,7 @@ import qualified Text.XML as X
 import qualified Data.XML.Types as XT
 import Data.XML.Pickle
 
+import Data.Either
 import System.Environment
 import System.Exit
 import System.IO
@@ -49,7 +50,16 @@ process filename = do
                         (Just $ SpaceId "ISO4217" "USD")
                         0
                         (Just $ AccountSlots
-                            [ ListSlot "placeholder" "string" "true"
+                            [ Slot "placeholder" "string" (Left "true")
+                            , Slot "reconcile-info" "frame" (Right
+                                [ Slot "list-date" "integer" (Left "0")
+                                , Slot "last-interval" "frame" (Right
+                                    [ Slot "days" "integer" (Left "3")
+                                    , Slot "Months" "integer" (Left "0")
+                                    ]
+                                    )
+                                ]
+                                )
                             ]
                         )
                         (Just $ AccountParentId "guid" "ff9490d50f87adaa01bdaec2119f8a98")
@@ -108,11 +118,10 @@ data AccountSlots = AccountSlots
     { asSlot :: [Slot]
     } deriving (Show, Eq)
 
--- TODO: Extend
-data Slot = ListSlot
+data Slot = Slot
     { sKey :: T.Text
     , sType :: T.Text
-    , sValue :: T.Text
+    , sValue :: Either T.Text [Slot] -- NOTE: Text must be on Left (Otherwise xpEither won't work right for recursive pickling)
     } deriving (Show, Eq)
 
 
@@ -320,11 +329,11 @@ xpAccountSlots =
 xpSlot :: PU [XT.Node] Slot
 xpSlot =
     xpWrap
-        (\(sKey, (sType, sValue)) -> ListSlot sKey sType sValue)
-        (\(ListSlot sKey sType sValue) -> (sKey, (sType, sValue)))
+        (\(sKey, (sType, sValue)) -> Slot sKey sType sValue)
+        (\(Slot sKey sType sValue) -> (sKey, (sType, sValue)))
         (xpElemNodes "slot"
             (xp2Tuple
                 (xpElemText "{http://www.gnucash.org/XML/slot}key")
-                (xpElem "{http://www.gnucash.org/XML/slot}value" (xpAttr "type" xpText) (xpContent xpText))
+                (xpElem "{http://www.gnucash.org/XML/slot}value" (xpAttr "type" xpText) (xpEither (xpContent xpText) (xpList xpSlot)))
             )
         )
