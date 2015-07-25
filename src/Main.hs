@@ -357,7 +357,7 @@ xpBooks =
     xpWrap
         (\(version, (guid, (slots, count, commodity, priceDb, accountList, transactionList), budget)) -> GnuCashBook version guid slots count commodity priceDb accountList transactionList budget)
         (\(GnuCashBook version guid slots count commodity priceDb accountList transactionList budget) -> (version, (guid, (slots, count, commodity, priceDb, accountList, transactionList), budget)))
-        (xpElem (gnc "book") (xpAttr "version" xpText)
+        (xpElem (gnc "book") xpVersion
             (xp3Tuple
                 xpBookId
                 (xp6Tuple
@@ -388,7 +388,7 @@ xpCommodity =
     xpWrap
         (\(version, (spaceId, (name, xcode, fraction), quote, source, tz)) -> Commodity version spaceId name xcode fraction quote source tz)
         (\(Commodity version spaceId name xcode fraction quote source tz) -> (version, (spaceId, (name, xcode, fraction), quote, source, tz)))
-        (xpElem (gnc "commodity") (xpAttr "version" xpText)
+        (xpElem (gnc "commodity") xpVersion
             (xp5Tuple
                 xpSpaceId
                 (xp3Tuple
@@ -414,7 +414,7 @@ xpPriceDb =
     xpWrap
         (uncurry PriceDb)
         (\(PriceDb version prices) -> (version, prices))
-        (xpElem (gnc "pricedb") (xpAttr "version" xpText) (xpList xpPrice))
+        (xpElem (gnc "pricedb") xpVersion (xpList xpPrice))
 
 xpPrice :: PU [XT.Node] Price
 xpPrice =
@@ -499,7 +499,7 @@ xpAccount =
     xpWrap
         (\(version, ((name, guid, aType), (commodity, commodityScu, desc, slots, parent))) -> Account version name guid aType commodity commodityScu desc slots parent)
         (\(Account version name guid aType commodity commodityScu desc slots parent) -> (version, ((name, guid, aType), (commodity, commodityScu, desc, slots, parent))))
-        (xpElem (gnc "account") (xpAttr "version" xpText)
+        (xpElem (gnc "account") xpVersion
             (xp2Tuple
                 (xp3Tuple
                     (xpElemText (act "name"))
@@ -575,7 +575,7 @@ xpTransaction =
     xpWrap
         (\(ver, (guid, currency, (num, posted, entered, desc, slots, splits))) -> Transaction ver guid currency num posted entered desc slots splits)
         (\(Transaction ver guid currency num posted entered desc slots splits) -> (ver, (guid, currency, (num, posted, entered, desc, slots, splits))))
-        (xpElem (gnc "transaction") (xpAttr "version" xpText)
+        (xpElem (gnc "transaction") xpVersion
             (xp3Tuple
                 xpTransactionId
                 (xpElemNodes (trn "currency") xpSpaceId)
@@ -616,7 +616,7 @@ xpBudget =
     xpWrap
         (\(version, (id, name, _, peroid, recurrence)) -> Budget version id name peroid recurrence)
         (\(Budget version id name peroid recurrence) -> (version, (id, name, (), peroid, recurrence)))
-        (xpElem (gnc "budget") (xpAttr "version" xpText)
+        (xpElem (gnc "budget") xpVersion
             (xp5Tuple
                 xpBudgetId
                 (xpElemText (bgt "name"))
@@ -631,13 +631,16 @@ xpRecurrence =
     xpWrap
         (\(version, (multi, period, start)) -> Recurrence version multi period start)
         (\(Recurrence version multi period start) -> (version, (multi, period, start)))
-        (xpElem (bgt "recurrence") (xpAttr "version" xpText)
+        (xpElem (bgt "recurrence") xpVersion
             (xp3Tuple
                 (xpElemNodes (recurrence "mult") (xpContent xpPrim))
                 (xpElemText (recurrence "period_type"))
                 (xpElemNodes (recurrence "start") (xpElemText "gdate"))
             )
         )
+
+xpVersion :: PU [Attribute] T.Text
+xpVersion = xpAttr "version" xpText
 
 
 --
