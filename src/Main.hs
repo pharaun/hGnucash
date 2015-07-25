@@ -120,6 +120,10 @@ process filename = do
     putStrLn ""
     print out
     putStrLn ""
+    case (X.fromXMLDocument out) of
+        Left _  -> print "Error?"
+        Right x -> print $ X.renderText X.def x
+    putStrLn ""
     print iin
     putStrLn ""
     case iin of
@@ -144,7 +148,7 @@ data GnuCashBook = GnuCashBook
     { version :: T.Text -- TODO: ADT this
     , guid :: BookId
     , bookSlots :: Maybe BookSlots
-    , count :: Map.Map T.Text Integer
+    , count :: Map.Map T.Text Integer -- CountData basically
     , commoditys :: [Commodity]
     , priceDb :: Maybe PriceDb
     , accounts :: [Account]
@@ -233,6 +237,7 @@ data Split = Split
 
 --
 -- TODO: Maybe unify these somehow
+-- Look into maybe Phantom type to attach specific id to specific block (mainly for name prefixes purposes)
 --
 data BookId = BookId
     { idType :: T.Text
@@ -328,7 +333,7 @@ xpCountData =
     xpWrap
         (uncurry CountData)
         (\(CountData cType amount) -> (cType, amount))
-        (xpElem "{http://www.gnucash.org/XML/gnc}count-data" (xpAttr "{http://www.gnucash.org/XML/cd}type" xpText) (xpContent xpPrim))
+        (xpElem (gnc "count-data") (xpAttr (cd "type") xpText) (xpContent xpPrim))
 
 --
 -- Restricted xpMap
@@ -352,12 +357,12 @@ xpBooks =
     xpWrap
         (\(version, (guid, (slots, count, commodity, priceDb, accountList, transactionList), budget)) -> GnuCashBook version guid slots count commodity priceDb accountList transactionList budget)
         (\(GnuCashBook version guid slots count commodity priceDb accountList transactionList budget) -> (version, (guid, (slots, count, commodity, priceDb, accountList, transactionList), budget)))
-        (xpElem "{http://www.gnucash.org/XML/gnc}book" (xpAttr "version" xpText)
+        (xpElem (gnc "book") (xpAttr "version" xpText)
             (xp3Tuple
                 xpBookId
                 (xp6Tuple
                     (xpOption xpBookSlots)
-                    (xpSubsetMap countDataNode "{http://www.gnucash.org/XML/gnc}count-data" "{http://www.gnucash.org/XML/cd}type" xpText (xpContent xpPrim))
+                    (xpSubsetMap countDataNode (gnc "count-data") (cd "type") xpText (xpContent xpPrim))
                     (xpList xpCommodity)
                     (xpOption xpPriceDb)
                     (xpList xpAccount)
@@ -376,24 +381,24 @@ xpBookId =
     xpWrap
         (uncurry BookId)
         (\(BookId idType idValue) -> (idType, idValue))
-        (xpElem "{http://www.gnucash.org/XML/book}id" (xpAttr "type" xpText) (xpContent xpText))
+        (xpElem (book "id") (xpAttr "type" xpText) (xpContent xpText))
 
 xpCommodity :: PU [XT.Node] Commodity
 xpCommodity =
     xpWrap
         (\(version, (spaceId, (name, xcode, fraction), quote, source, tz)) -> Commodity version spaceId name xcode fraction quote source tz)
         (\(Commodity version spaceId name xcode fraction quote source tz) -> (version, (spaceId, (name, xcode, fraction), quote, source, tz)))
-        (xpElem "{http://www.gnucash.org/XML/gnc}commodity" (xpAttr "version" xpText)
+        (xpElem (gnc "commodity") (xpAttr "version" xpText)
             (xp5Tuple
                 xpSpaceId
                 (xp3Tuple
-                    (xpOption (xpElemText "{http://www.gnucash.org/XML/cmdty}name"))
-                    (xpOption (xpElemText "{http://www.gnucash.org/XML/cmdty}xcode"))
-                    (xpOption (xpElemNodes "{http://www.gnucash.org/XML/cmdty}fraction" (xpContent xpPrim)))
+                    (xpOption (xpElemText (cmdty "name")))
+                    (xpOption (xpElemText (cmdty "xcode")))
+                    (xpOption (xpElemNodes (cmdty "fraction") (xpContent xpPrim)))
                 )
-                (xpOption (xpElemBlank "{http://www.gnucash.org/XML/cmdty}get_quotes"))
-                (xpOption (xpElemText "{http://www.gnucash.org/XML/cmdty}quote_source"))
-                (xpOption (xpElemBlank "{http://www.gnucash.org/XML/cmdty}quote_tz"))
+                (xpOption (xpElemBlank (cmdty "get_quotes")))
+                (xpOption (xpElemText (cmdty "quote_source")))
+                (xpOption (xpElemBlank (cmdty "quote_tz")))
             )
         )
 
@@ -402,14 +407,14 @@ xpSpaceId =
     xpWrap
         (uncurry SpaceId)
         (\(SpaceId space id) -> (space, id))
-        (xp2Tuple (xpElemText "{http://www.gnucash.org/XML/cmdty}space") (xpElemText "{http://www.gnucash.org/XML/cmdty}id"))
+        (xp2Tuple (xpElemText (cmdty "space")) (xpElemText (cmdty "id")))
 
 xpPriceDb :: PU [XT.Node] PriceDb
 xpPriceDb =
     xpWrap
         (uncurry PriceDb)
         (\(PriceDb version prices) -> (version, prices))
-        (xpElem "{http://www.gnucash.org/XML/gnc}pricedb" (xpAttr "version" xpText) (xpList xpPrice))
+        (xpElem (gnc "pricedb") (xpAttr "version" xpText) (xpList xpPrice))
 
 xpPrice :: PU [XT.Node] Price
 xpPrice =
@@ -420,12 +425,12 @@ xpPrice =
             (xp2Tuple
                 xpPriceId
                 (xp6Tuple
-                    (xpElemNodes "{http://www.gnucash.org/XML/price}commodity" xpSpaceId)
-                    (xpElemNodes "{http://www.gnucash.org/XML/price}currency" xpSpaceId)
-                    (xpElemNodes "{http://www.gnucash.org/XML/price}time" xpDate)
-                    (xpElemText "{http://www.gnucash.org/XML/price}source")
-                    (xpOption (xpElemText "{http://www.gnucash.org/XML/price}type"))
-                    (xpElemText "{http://www.gnucash.org/XML/price}value")
+                    (xpElemNodes (price "commodity") xpSpaceId)
+                    (xpElemNodes (price "currency") xpSpaceId)
+                    (xpElemNodes (price "time") xpDate)
+                    (xpElemText (price "source"))
+                    (xpOption (xpElemText (price "type")))
+                    (xpElemText (price "value"))
                 )
             )
         )
@@ -435,14 +440,14 @@ xpPriceId =
     xpWrap
         (uncurry PriceId)
         (\(PriceId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem "{http://www.gnucash.org/XML/price}id" (xpAttr "type" xpText) (xpContent xpText))
+        (xpElem (price "id") (xpAttr "type" xpText) (xpContent xpText))
 
 xpBudgetId :: PU [XT.Node] BudgetId
 xpBudgetId =
     xpWrap
         (uncurry BudgetId)
         (\(BudgetId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem "{http://www.gnucash.org/XML/bgt}id" (xpAttr "type" xpText) (xpContent xpText))
+        (xpElem (bgt "id") (xpAttr "type" xpText) (xpContent xpText))
 
 xpDate :: PU [XT.Node] Date
 xpDate =
@@ -450,8 +455,8 @@ xpDate =
         (uncurry Date)
         (\(Date date ns) -> (date, ns))
         (xp2Tuple
-            (xpElemText "{http://www.gnucash.org/XML/ts}date")
-            (xpOption (xpElemText "{http://www.gnucash.org/XML/ts}ns"))
+            (xpElemText (ts "date"))
+            (xpOption (xpElemText (ts "ns")))
         )
 
 xpAccountId :: PU [XT.Node] AccountId
@@ -459,52 +464,52 @@ xpAccountId =
     xpWrap
         (uncurry AccountId)
         (\(AccountId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem "{http://www.gnucash.org/XML/act}id" (xpAttr "type" xpText) (xpContent xpText))
+        (xpElem (act "id") (xpAttr "type" xpText) (xpContent xpText))
 
 xpTransactionId :: PU [XT.Node] TransactionId
 xpTransactionId =
     xpWrap
         (uncurry TransactionId)
         (\(TransactionId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem "{http://www.gnucash.org/XML/trn}id" (xpAttr "type" xpText) (xpContent xpText))
+        (xpElem (trn "id") (xpAttr "type" xpText) (xpContent xpText))
 
 xpSplitId :: PU [XT.Node] SplitId
 xpSplitId =
     xpWrap
         (uncurry SplitId)
         (\(SplitId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem "{http://www.gnucash.org/XML/split}id" (xpAttr "type" xpText) (xpContent xpText))
+        (xpElem (split "id") (xpAttr "type" xpText) (xpContent xpText))
 
 xpSplitAccountId :: PU [XT.Node] SplitAccountId
 xpSplitAccountId =
     xpWrap
         (uncurry SplitAccountId)
         (\(SplitAccountId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem "{http://www.gnucash.org/XML/split}account" (xpAttr "type" xpText) (xpContent xpText))
+        (xpElem (split "account") (xpAttr "type" xpText) (xpContent xpText))
 
 xpAccountParentId :: PU [XT.Node] AccountParentId
 xpAccountParentId =
     xpWrap
         (uncurry AccountParentId)
         (\(AccountParentId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem "{http://www.gnucash.org/XML/act}parent" (xpAttr "type" xpText) (xpContent xpText))
+        (xpElem (act "parent") (xpAttr "type" xpText) (xpContent xpText))
 
 xpAccount :: PU [XT.Node] Account
 xpAccount =
     xpWrap
         (\(version, ((name, guid, aType), (commodity, commodityScu, desc, slots, parent))) -> Account version name guid aType commodity commodityScu desc slots parent)
         (\(Account version name guid aType commodity commodityScu desc slots parent) -> (version, ((name, guid, aType), (commodity, commodityScu, desc, slots, parent))))
-        (xpElem "{http://www.gnucash.org/XML/gnc}account" (xpAttr "version" xpText)
+        (xpElem (gnc "account") (xpAttr "version" xpText)
             (xp2Tuple
                 (xp3Tuple
-                    (xpElemText "{http://www.gnucash.org/XML/act}name")
+                    (xpElemText (act "name"))
                     xpAccountId
-                    (xpElemText "{http://www.gnucash.org/XML/act}type")
+                    (xpElemText (act "type"))
                 )
                 (xp5Tuple
-                    (xpOption (xpElemNodes "{http://www.gnucash.org/XML/act}commodity" xpSpaceId))
-                    (xpOption (xpElemNodes "{http://www.gnucash.org/XML/act}commodity-scu" (xpContent xpPrim)))
-                    (xpOption (xpElemNodes "{http://www.gnucash.org/XML/act}description" (xpContent xpText)))
+                    (xpOption (xpElemNodes (act "commodity") xpSpaceId))
+                    (xpOption (xpElemNodes (act "commodity-scu") (xpContent xpPrim)))
+                    (xpOption (xpElemNodes (act "description") (xpContent xpText)))
                     (xpOption xpAccountSlots)
                     (xpOption xpAccountParentId)
                 )
@@ -516,28 +521,28 @@ xpAccountSlots =
     xpWrap
         AccountSlots
         (\(AccountSlots slot) -> (slot))
-        (xpElemNodes "{http://www.gnucash.org/XML/act}slots" (xpList xpSlot))
+        (xpElemNodes (act "slots") (xpList xpSlot))
 
 xpBookSlots :: PU [XT.Node] BookSlots
 xpBookSlots =
     xpWrap
         BookSlots
         (\(BookSlots slot) -> (slot))
-        (xpElemNodes "{http://www.gnucash.org/XML/book}slots" (xpList xpSlot))
+        (xpElemNodes (book "slots") (xpList xpSlot))
 
 xpTransactionSlots :: PU [XT.Node] TransactionSlots
 xpTransactionSlots =
     xpWrap
         TransactionSlots
         (\(TransactionSlots slot) -> (slot))
-        (xpElemNodes "{http://www.gnucash.org/XML/trn}slots" (xpList xpSlot))
+        (xpElemNodes (trn "slots") (xpList xpSlot))
 
 xpSplitSlots :: PU [XT.Node] SplitSlots
 xpSplitSlots =
     xpWrap
         SplitSlots
         (\(SplitSlots slot) -> (slot))
-        (xpElemNodes "{http://www.gnucash.org/XML/split}slots" (xpList xpSlot))
+        (xpElemNodes (split "slots") (xpList xpSlot))
 
 xpSlot :: PU [XT.Node] Slot
 xpSlot =
@@ -546,8 +551,8 @@ xpSlot =
         (\(Slot sKey sType sValue) -> (sKey, (sType, sValue)))
         (xpElemNodes "slot"
             (xp2Tuple
-                (xpElemText "{http://www.gnucash.org/XML/slot}key")
-                (xpElem "{http://www.gnucash.org/XML/slot}value" (xpAttr "type" xpText) xpSlotValue)
+                (xpElemText (slot "key"))
+                (xpElem (slot "value") (xpAttr "type" xpText) xpSlotValue)
             )
         )
 
@@ -570,17 +575,17 @@ xpTransaction =
     xpWrap
         (\(ver, (guid, currency, (num, posted, entered, desc, slots, splits))) -> Transaction ver guid currency num posted entered desc slots splits)
         (\(Transaction ver guid currency num posted entered desc slots splits) -> (ver, (guid, currency, (num, posted, entered, desc, slots, splits))))
-        (xpElem "{http://www.gnucash.org/XML/gnc}transaction" (xpAttr "version" xpText)
+        (xpElem (gnc "transaction") (xpAttr "version" xpText)
             (xp3Tuple
                 xpTransactionId
-                (xpElemNodes "{http://www.gnucash.org/XML/trn}currency" xpSpaceId)
+                (xpElemNodes (trn "currency") xpSpaceId)
                 (xp6Tuple
-                    (xpOption (xpElemNodes "{http://www.gnucash.org/XML/trn}num" (xpOption (xpContent xpPrim))))
-                    (xpElemNodes "{http://www.gnucash.org/XML/trn}date-posted" xpDate)
-                    (xpElemNodes "{http://www.gnucash.org/XML/trn}date-entered" xpDate)
-                    (xpElemText "{http://www.gnucash.org/XML/trn}description")
+                    (xpOption (xpElemNodes (trn "num") (xpOption (xpContent xpPrim))))
+                    (xpElemNodes (trn "date-posted") xpDate)
+                    (xpElemNodes (trn "date-entered") xpDate)
+                    (xpElemText (trn "description"))
                     (xpOption xpTransactionSlots)
-                    (xpElemNodes "{http://www.gnucash.org/XML/trn}splits" (xpList xpSplit))
+                    (xpElemNodes (trn "splits") (xpList xpSplit))
                 )
             )
         )
@@ -590,16 +595,16 @@ xpSplit =
     xpWrap
         (\(id, action, memo, (state, date, value, quantity, accountId, slots)) -> Split id action memo state date value quantity accountId slots)
         (\(Split id action memo state date value quantity accountId slots) -> (id, action, memo, (state, date, value, quantity, accountId, slots)))
-        (xpElemNodes "{http://www.gnucash.org/XML/trn}split"
+        (xpElemNodes (trn "split")
             (xp4Tuple
                 xpSplitId
-                (xpOption (xpElemText "{http://www.gnucash.org/XML/split}action"))
-                (xpOption (xpElemText "{http://www.gnucash.org/XML/split}memo"))
+                (xpOption (xpElemText (split "action")))
+                (xpOption (xpElemText (split "memo")))
                 (xp6Tuple
-                    (xpElemText "{http://www.gnucash.org/XML/split}reconciled-state")
-                    (xpOption (xpElemNodes "{http://www.gnucash.org/XML/split}reconcile-date" xpDate))
-                    (xpElemText "{http://www.gnucash.org/XML/split}value")
-                    (xpElemText "{http://www.gnucash.org/XML/split}quantity")
+                    (xpElemText (split "reconciled-state"))
+                    (xpOption (xpElemNodes (split "reconcile-date") xpDate))
+                    (xpElemText (split "value"))
+                    (xpElemText (split "quantity"))
                     xpSplitAccountId
                     (xpOption xpSplitSlots)
                 )
@@ -611,12 +616,12 @@ xpBudget =
     xpWrap
         (\(version, (id, name, _, peroid, recurrence)) -> Budget version id name peroid recurrence)
         (\(Budget version id name peroid recurrence) -> (version, (id, name, (), peroid, recurrence)))
-        (xpElem "{http://www.gnucash.org/XML/gnc}budget" (xpAttr "version" xpText)
+        (xpElem (gnc "budget") (xpAttr "version" xpText)
             (xp5Tuple
                 xpBudgetId
-                (xpElemText "{http://www.gnucash.org/XML/bgt}name")
-                (xpElemBlank "{http://www.gnucash.org/XML/bgt}description")
-                (xpElemNodes "{http://www.gnucash.org/XML/bgt}num-periods" (xpContent xpPrim))
+                (xpElemText (bgt "name"))
+                (xpElemBlank (bgt "description"))
+                (xpElemNodes (bgt "num-periods") (xpContent xpPrim))
                 xpRecurrence
             )
         )
@@ -626,10 +631,44 @@ xpRecurrence =
     xpWrap
         (\(version, (multi, period, start)) -> Recurrence version multi period start)
         (\(Recurrence version multi period start) -> (version, (multi, period, start)))
-        (xpElem "{http://www.gnucash.org/XML/bgt}recurrence" (xpAttr "version" xpText)
+        (xpElem (bgt "recurrence") (xpAttr "version" xpText)
             (xp3Tuple
-                (xpElemNodes "{http://www.gnucash.org/XML/recurrence}mult" (xpContent xpPrim))
-                (xpElemText "{http://www.gnucash.org/XML/recurrence}period_type")
-                (xpElemNodes "{http://www.gnucash.org/XML/recurrence}start" (xpElemText "gdate"))
+                (xpElemNodes (recurrence "mult") (xpContent xpPrim))
+                (xpElemText (recurrence "period_type"))
+                (xpElemNodes (recurrence "start") (xpElemText "gdate"))
             )
         )
+
+
+--
+-- "Useful" list of pre-existing XML names
+--
+gnc n        = XT.Name n (Just "http://www.gnucash.org/XML/gnc") (Just "gnc")
+act n        = XT.Name n (Just "http://www.gnucash.org/XML/act") (Just "act")
+book n       = XT.Name n (Just "http://www.gnucash.org/XML/book") (Just "book")
+cd n         = XT.Name n (Just "http://www.gnucash.org/XML/cd") (Just "cd")
+cmdty n      = XT.Name n (Just "http://www.gnucash.org/XML/cmdty") (Just "cmdty")
+price n      = XT.Name n (Just "http://www.gnucash.org/XML/price") (Just "price")
+slot n       = XT.Name n (Just "http://www.gnucash.org/XML/slot") (Just "slot")
+split n      = XT.Name n (Just "http://www.gnucash.org/XML/split") (Just "split")
+sx n         = XT.Name n (Just "http://www.gnucash.org/XML/sx") (Just "sx")
+trn n        = XT.Name n (Just "http://www.gnucash.org/XML/trn") (Just "trn")
+ts n         = XT.Name n (Just "http://www.gnucash.org/XML/ts") (Just "ts")
+fs n         = XT.Name n (Just "http://www.gnucash.org/XML/fs") (Just "fs")
+bgt n        = XT.Name n (Just "http://www.gnucash.org/XML/bgt") (Just "bgt")
+recurrence n = XT.Name n (Just "http://www.gnucash.org/XML/recurrence") (Just "recurrence")
+lot n        = XT.Name n (Just "http://www.gnucash.org/XML/lot") (Just "lot")
+addr n       = XT.Name n (Just "http://www.gnucash.org/XML/addr") (Just "addr")
+owner n      = XT.Name n (Just "http://www.gnucash.org/XML/owner") (Just "owner")
+billterm n   = XT.Name n (Just "http://www.gnucash.org/XML/billterm") (Just "billterm")
+btDays n     = XT.Name n (Just "http://www.gnucash.org/XML/bt-days") (Just "bt-days")
+btProx n     = XT.Name n (Just "http://www.gnucash.org/XML/bt-prox") (Just "bt-prox")
+cust n       = XT.Name n (Just "http://www.gnucash.org/XML/cust") (Just "cust")
+employee n   = XT.Name n (Just "http://www.gnucash.org/XML/employee") (Just "employee")
+entry n      = XT.Name n (Just "http://www.gnucash.org/XML/entry") (Just "entry")
+invoice n    = XT.Name n (Just "http://www.gnucash.org/XML/invoice") (Just "invoice")
+job n        = XT.Name n (Just "http://www.gnucash.org/XML/job") (Just "job")
+order n      = XT.Name n (Just "http://www.gnucash.org/XML/order") (Just "order")
+taxtable n   = XT.Name n (Just "http://www.gnucash.org/XML/taxtable") (Just "taxtable")
+tte n        = XT.Name n (Just "http://www.gnucash.org/XML/tte") (Just "tte")
+vendor n     = XT.Name n (Just "http://www.gnucash.org/XML/vendor") (Just "vendor")
