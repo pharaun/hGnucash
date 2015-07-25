@@ -183,33 +183,6 @@ data Account = Account
     , aParent :: Maybe AccountParentId
     } deriving (Show, Eq)
 
-data AccountSlots = AccountSlots
-    { asSlot :: [Slot]
-    } deriving (Show, Eq)
-
-data SlotValue = SVText T.Text
-               | SVSlot [Slot]
-               | SVGdate T.Text -- TODO: date
-               deriving (Show, Eq)
-
-data Slot = Slot
-    { sKey :: T.Text
-    , sType :: T.Text
-    , sValue :: SlotValue
-    } deriving (Show, Eq)
-
-data TransactionSlots = TransactionSlots
-    { tsSlot :: [Slot]
-    } deriving (Show, Eq)
-
-data SplitSlots = SplitSlots
-    { ssSlot :: [Slot]
-    } deriving (Show, Eq)
-
-data BookSlots = BookSlots
-    { bsSlot :: [Slot]
-    } deriving (Show, Eq)
-
 data Transaction = Transaction
     { tVersion :: T.Text -- TODO: ADT this
     , tGuid :: TransactionId
@@ -234,6 +207,64 @@ data Split = Split
     , spSlots :: Maybe SplitSlots
     } deriving (Show, Eq)
 
+data Commodity = Commodity
+    { cVersion :: T.Text -- TODO: ADT this
+    , cSId :: SpaceId
+    , cName :: Maybe T.Text
+    , cXCode :: Maybe T.Text
+    , cFraction :: Maybe Integer
+    , cQuote :: Maybe ()
+    , cSource :: Maybe T.Text
+    , cTz :: Maybe ()
+    } deriving (Show, Eq)
+
+data PriceDb = PriceDb
+    { pVersion :: T.Text -- TODO: ADT this
+    , prices :: [Price]
+    } deriving (Show, Eq)
+
+data Price = Price
+    { pGuid :: PriceId
+    , commoditySId :: SpaceId
+    , currencySId :: SpaceId
+    , pTime :: Date
+    , pSource :: T.Text
+    , pType :: Maybe T.Text
+    , pValue :: T.Text -- TODO: convert to rational
+    } deriving (Show, Eq)
+
+data SlotValue = SVText T.Text
+               | SVSlot [Slot]
+               | SVGdate T.Text -- TODO: date
+               deriving (Show, Eq)
+
+data Slot = Slot
+    { sKey :: T.Text
+    , sType :: T.Text
+    , sValue :: SlotValue
+    } deriving (Show, Eq)
+
+--
+-- TODO: deduplicate these bits as well
+--
+data AccountSlots = AccountSlots
+    { asSlot :: [Slot]
+    } deriving (Show, Eq)
+
+data TransactionSlots = TransactionSlots
+    { tsSlot :: [Slot]
+    } deriving (Show, Eq)
+
+data SplitSlots = SplitSlots
+    { ssSlot :: [Slot]
+    } deriving (Show, Eq)
+
+data BookSlots = BookSlots
+    { bsSlot :: [Slot]
+    } deriving (Show, Eq)
+--
+-- TODO: deduplicate these bits as well
+--
 
 --
 -- TODO: Maybe unify these somehow
@@ -287,32 +318,7 @@ data BudgetId = BudgetId
 -- TODO: Maybe unify these somehow
 --
 
-data Commodity = Commodity
-    { cVersion :: T.Text -- TODO: ADT this
-    , cSId :: SpaceId
-    , cName :: Maybe T.Text
-    , cXCode :: Maybe T.Text
-    , cFraction :: Maybe Integer
-    , cQuote :: Maybe ()
-    , cSource :: Maybe T.Text
-    , cTz :: Maybe ()
-    } deriving (Show, Eq)
-
-data PriceDb = PriceDb
-    { pVersion :: T.Text -- TODO: ADT this
-    , prices :: [Price]
-    } deriving (Show, Eq)
-
-data Price = Price
-    { pGuid :: PriceId
-    , commoditySId :: SpaceId
-    , currencySId :: SpaceId
-    , pTime :: Date
-    , pSource :: T.Text
-    , pType :: Maybe T.Text
-    , pValue :: T.Text -- TODO: convert to rational
-    } deriving (Show, Eq)
-
+-- TODO: make this handle <gdata> as well
 data Date = Date
     { date :: T.Text -- TODO: proper type/parsing
     , ns :: Maybe T.Text -- TODO: proper type/parsing (no idea what a ns is)
