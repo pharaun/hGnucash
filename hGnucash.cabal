@@ -38,3 +38,4 @@ executable hGnucash
                      , xml-types
                      , xml-picklers
                      , xml-conduit
+                     , containers
