@@ -150,7 +150,7 @@ data GnuCashBook = GnuCashBook
     , bookSlots :: Maybe BookSlots
     , count :: Map.Map T.Text Integer -- CountData basically
     , commoditys :: [Commodity]
-    , priceDb :: Maybe PriceDb
+    , priceDb :: Maybe PriceDb -- TODO: outta to be a List perhaps?
     , accounts :: [Account]
     , transaction :: [Transaction]
     , budget :: Maybe Budget
@@ -233,6 +233,9 @@ data Price = Price
     , pValue :: T.Text -- TODO: convert to rational
     } deriving (Show, Eq)
 
+--
+-- TODO: make these more useful/strict (ie frame, integer, text, etc)
+--
 data SlotValue = SVText T.Text
                | SVSlot [Slot]
                | SVGdate T.Text -- TODO: date
@@ -240,7 +243,7 @@ data SlotValue = SVText T.Text
 
 data Slot = Slot
     { sKey :: T.Text
-    , sType :: T.Text
+    , sType :: T.Text -- TODO: dedup into SlotValue (for the type info)
     , sValue :: SlotValue
     } deriving (Show, Eq)
 
