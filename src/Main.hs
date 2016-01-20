@@ -30,33 +30,33 @@ process filename = do
 
     let dat = GnuCash (CountData "book" 1)
                 [ GnuCashBook "2.0.0"
-                    (BookId "guid" "3d2281ed92e804792714679c1b0cab5c")
-                    (Just $ BookSlots
+                    (ptBook "guid" "3d2281ed92e804792714679c1b0cab5c")
+                    (Just $ sBook
                         [ Slot "placeholder" "string" (SVText "true")
                         , Slot "reconcile-info" "frame" (SVText "hi")
                         ]
                     )
                     (Map.fromList [("account", 49), ("transaction", 903)])
-                    [Commodity "2.0.0" (SpaceId "ISO4217" "USD") (Just "Yelp") (Just "US9858171054") (Just 1) Nothing (Just "currency") (Just ())]
+                    [Commodity "2.0.0" (ptSpace "ISO4217" "USD") (Just "Yelp") (Just "US9858171054") (Just 1) Nothing (Just "currency") (Just ())]
                     (Just $ PriceDb "2.0.0"
                         [ Price
-                            (PriceId "guid" "c6e71724e737f4e5c7f5e1eaa60a1e32")
-                            (SpaceId "ISO4217" "CNY")
-                            (SpaceId "ISO4217" "USD")
+                            (ptPrice "guid" "c6e71724e737f4e5c7f5e1eaa60a1e32")
+                            (ptSpace "ISO4217" "CNY")
+                            (ptSpace "ISO4217" "USD")
                             (Date "2010-09-29 00:00:00 -0400" Nothing)
                             "user:xfer-dialog"
                             (Just "last")
                             "579/3737"
                         ]
                     )
-                    [ Account "2.0.0" "Foobar" (AccountId "guid" "6149d1c96c021e5f5d0ff886718b7f7d") "ROOT" Nothing Nothing Nothing Nothing Nothing
+                    [ Account "2.0.0" "Foobar" (ptAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d") "ROOT" Nothing Nothing Nothing Nothing Nothing
                     , Account "2.0.0" "Foobar"
-                        (AccountId "guid" "6149d1c96c021e5f5d0ff886718b7f7d")
+                        (ptAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d")
                         "BANK"
-                        (Just $ SpaceId "ISO4217" "USD")
+                        (Just $ ptSpace "ISO4217" "USD")
                         (Just 100)
                         (Just "Unknown")
-                        (Just $ AccountSlots
+                        (Just $ sAccount
                             [ Slot "placeholder" "string" (SVText "true")
                             , Slot "reconcile-info" "frame" (SVSlot
                                 [ Slot "list-date" "integer" (SVText "0")
@@ -70,45 +70,45 @@ process filename = do
                                 )
                             ]
                         )
-                        (Just $ AccountParentId "guid" "ff9490d50f87adaa01bdaec2119f8a98")
+                        (Just $ ptAccountParent "guid" "ff9490d50f87adaa01bdaec2119f8a98")
                     ]
                     [ Transaction "2.0.0"
-                        (TransactionId "guid" "b9bbc2305a2be67bd1e16c283a6cd1ab")
-                        (SpaceId "ISO4217" "USD")
+                        (ptTransaction "guid" "b9bbc2305a2be67bd1e16c283a6cd1ab")
+                        (TypedId "ISO4217" "USD")
                         (Just $ Just 149)
                         (Date "2010-09-29 00:00:00 -0400" Nothing)
                         (Date "2010-09-29 00:00:00 -0400" (Just "623788000"))
                         "Opening Balance"
-                        (Just $ TransactionSlots
+                        (Just $ sTransaction
                             [ Slot "placeholder" "string" (SVText "true")
                             ]
                         )
                         [ Split
-                            (SplitId "guid" "95055fbe5a8b65bc93705d35e7f59636")
+                            (ptSplit "guid" "95055fbe5a8b65bc93705d35e7f59636")
                             Nothing
                             Nothing
                             "y"
                             (Just $ Date "2010-09-29 00:00:00 -0400" Nothing)
                             "73923/100"
                             "73923/100"
-                            (SplitAccountId "guid" "6149d1c96c021e5f5d0ff886718b7f7d")
-                            (Just $ SplitSlots
+                            (ptSplitAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d")
+                            (Just $ sSplit
                                 [ Slot "placeholder" "string" (SVText "true")
                                 ]
                             )
                         , Split
-                            (SplitId "guid" "95055fbe5a8b65bc93705d35e7f59636")
+                            (ptSplit "guid" "95055fbe5a8b65bc93705d35e7f59636")
                             (Just "Buy")
                             (Just "Headlight")
                             "n"
                             Nothing
                             "73923/100"
                             "73923/100"
-                            (SplitAccountId "guid" "6149d1c96c021e5f5d0ff886718b7f7d")
+                            (ptSplitAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d")
                             Nothing
                         ]
                     ]
-                    (Just $ Budget "2.0.0" (BudgetId "guid" "ce3f353604f5b3d4f6a292bf598eb2d1") "Unnamed Budget" 12
+                    (Just $ Budget "2.0.0" (ptBudget "guid" "ce3f353604f5b3d4f6a292bf598eb2d1") "Unnamed Budget" 12
                         (Recurrence "1.0.0" 1 "month" "2013-11-01")
                     )
                 ]
@@ -146,8 +146,8 @@ data CountData = CountData
 
 data GnuCashBook = GnuCashBook
     { version :: T.Text -- TODO: ADT this
-    , guid :: BookId
-    , bookSlots :: Maybe BookSlots
+    , guid :: TypedId PTBook
+    , bookSlots :: Maybe (TypedSlots SBook)
     , count :: Map.Map T.Text Integer -- CountData basically
     , commoditys :: [Commodity]
     , priceDb :: Maybe PriceDb -- TODO: outta to be a List perhaps?
@@ -158,7 +158,7 @@ data GnuCashBook = GnuCashBook
 
 data Budget = Budget
     { bVersion :: T.Text -- TODO: ADT this
-    , bGuid :: BudgetId
+    , bGuid :: TypedId PTBudget
     , bName :: T.Text
     , bNumPeriods :: Integer
     , bRecurrence :: Recurrence
@@ -174,42 +174,42 @@ data Recurrence = Recurrence
 data Account = Account
     { aVersion :: T.Text -- TODO: ADT this
     , aName :: T.Text
-    , aGuid :: AccountId
+    , aGuid :: TypedId PTAccount
     , aType :: T.Text
-    , aCommodity :: Maybe SpaceId
+    , aCommodity :: Maybe (TypedId PTSpace)
     , aCommodityScu :: Maybe Integer
     , aDescription :: Maybe T.Text
-    , aSlots :: Maybe AccountSlots
-    , aParent :: Maybe AccountParentId
+    , aSlots :: Maybe (TypedSlots SAccount)
+    , aParent :: Maybe (TypedId PTAccountParent)
     } deriving (Show, Eq)
 
 data Transaction = Transaction
     { tVersion :: T.Text -- TODO: ADT this
-    , tGuid :: TransactionId
-    , tCurrency :: SpaceId
+    , tGuid :: TypedId PTTransaction
+    , tCurrency :: (TypedId PTSpace)
     , tNum :: Maybe (Maybe Integer) -- No idea what this is
     , tPosted :: Date
     , tEntered :: Date
     , tDescription :: T.Text
-    , tSlots :: Maybe TransactionSlots
+    , tSlots :: Maybe (TypedSlots STransaction)
     , tSplits :: [Split]
     } deriving (Show, Eq)
 
 data Split = Split
-    { spId :: SplitId
+    { spId :: TypedId PTSplit
     , sAction :: Maybe T.Text
     , sMemo :: Maybe T.Text
     , spReconciledState :: T.Text
     , spReconciledDate :: Maybe Date
     , spValue :: T.Text -- TODO: convert to rational
     , spQuantity :: T.Text -- TODO: convert to rational
-    , spAccountId :: SplitAccountId
-    , spSlots :: Maybe SplitSlots
+    , spAccountId :: TypedId PTSplitAccount
+    , spSlots :: Maybe (TypedSlots SSplit)
     } deriving (Show, Eq)
 
 data Commodity = Commodity
     { cVersion :: T.Text -- TODO: ADT this
-    , cSId :: SpaceId
+    , cSId :: TypedId PTSpace
     , cName :: Maybe T.Text
     , cXCode :: Maybe T.Text
     , cFraction :: Maybe Integer
@@ -224,9 +224,9 @@ data PriceDb = PriceDb
     } deriving (Show, Eq)
 
 data Price = Price
-    { pGuid :: PriceId
-    , commoditySId :: SpaceId
-    , currencySId :: SpaceId
+    { pGuid :: TypedId PTPrice
+    , commoditySId :: TypedId PTSpace
+    , currencySId :: TypedId PTSpace
     , pTime :: Date
     , pSource :: T.Text
     , pType :: Maybe T.Text
@@ -247,79 +247,144 @@ data Slot = Slot
     , sValue :: SlotValue
     } deriving (Show, Eq)
 
---
--- TODO: deduplicate these bits as well
---
-data AccountSlots = AccountSlots
-    { asSlot :: [Slot]
-    } deriving (Show, Eq)
 
-data TransactionSlots = TransactionSlots
-    { tsSlot :: [Slot]
-    } deriving (Show, Eq)
 
-data SplitSlots = SplitSlots
-    { ssSlot :: [Slot]
-    } deriving (Show, Eq)
-
-data BookSlots = BookSlots
-    { bsSlot :: [Slot]
-    } deriving (Show, Eq)
---
--- TODO: deduplicate these bits as well
---
 
 --
--- TODO: Maybe unify these somehow
--- Look into maybe Phantom type to attach specific id to specific block (mainly for name prefixes purposes)
+-- Phantom type
+--  Id types
 --
-data BookId = BookId
+data PTBook
+data PTSpace
+data PTPrice
+data PTAccount
+data PTAccountParent
+data PTTransaction
+data PTSplit
+data PTSplitAccount
+data PTBudget
+
+--
+-- TODO: Remove access to *This* one so users can't break types
+--
+data TypedId t = TypedId
     { idType :: T.Text
-    , idValue :: T.Text -- TODO: ADT the value/type
+    , idValue :: T.Text -- TODO: ADT this value/type
     } deriving (Show, Eq)
 
-data SpaceId = SpaceId
-    { sSpace :: T.Text
-    , sId :: T.Text
-    } deriving (Show, Eq)
-
-data PriceId = PriceId
-    { pIdType :: T.Text
-    , pIdValue :: T.Text -- TODO: ADT the value/type
-    } deriving (Show, Eq)
-
-data AccountId = AccountId
-    { aIdType :: T.Text
-    , aIdValue :: T.Text -- TODO: ADT the value/type
-    } deriving (Show, Eq)
-
-data AccountParentId = AccountParentId
-    { apIdType :: T.Text
-    , apIdValue :: T.Text -- TODO: ADT the value/type
-    } deriving (Show, Eq)
-
-data TransactionId = TransactionId
-    { tIdType :: T.Text
-    , tIdValue :: T.Text -- TODO: ADT the value/type
-    } deriving (Show, Eq)
-
-data SplitId = SplitId
-    { sIdType :: T.Text
-    , sIdValue :: T.Text -- TODO: ADT the value/type
-    } deriving (Show, Eq)
-
-data SplitAccountId = SplitAccountId
-    { saIdType :: T.Text
-    , saIdValue :: T.Text -- TODO: ADT the value/type
-    } deriving (Show, Eq)
-
-data BudgetId = BudgetId
-    { bIdType :: T.Text
-    , bIdValue :: T.Text -- TODO: ADT the value/type
-    } deriving (Show, Eq)
 --
--- TODO: Maybe unify these somehow
+-- Ways to create each phantom type
 --
+ptBook :: T.Text -> T.Text -> TypedId PTBook
+ptBook = TypedId
+ptSpace :: T.Text -> T.Text -> TypedId PTSpace
+ptSpace = TypedId
+ptPrice :: T.Text -> T.Text -> TypedId PTPrice
+ptPrice = TypedId
+ptAccount :: T.Text -> T.Text -> TypedId PTAccount
+ptAccount = TypedId
+ptAccountParent :: T.Text -> T.Text -> TypedId PTAccountParent
+ptAccountParent = TypedId
+ptTransaction :: T.Text -> T.Text -> TypedId PTTransaction
+ptTransaction = TypedId
+ptSplit :: T.Text -> T.Text -> TypedId PTSplit
+ptSplit = TypedId
+ptSplitAccount :: T.Text -> T.Text -> TypedId PTSplitAccount
+ptSplitAccount = TypedId
+ptBudget :: T.Text -> T.Text -> TypedId PTBudget
+ptBudget = TypedId
+
+--
+-- Generic TypedId
+--
+xpTypedId :: XT.Name -> PU [XT.Node] (TypedId t)
+xpTypedId name =
+    xpWrap
+        (uncurry TypedId)
+        (\(TypedId idType idValue) -> (idType, idValue))
+        (xpElem name (xpAttr "type" xpText) (xpContent xpText))
+
+xpBookId :: PU [XT.Node] (TypedId PTBook)
+xpBookId = xpTypedId (book "id")
+
+xpPriceId :: PU [XT.Node] (TypedId PTPrice)
+xpPriceId = xpTypedId (price "id")
+
+xpBudgetId :: PU [XT.Node] (TypedId PTBudget)
+xpBudgetId = xpTypedId (bgt "id")
+
+xpAccountId :: PU [XT.Node] (TypedId PTAccount)
+xpAccountId = xpTypedId (act "id")
+
+xpTransactionId :: PU [XT.Node] (TypedId PTTransaction)
+xpTransactionId = xpTypedId (trn "id")
+
+xpSplitId :: PU [XT.Node] (TypedId PTSplit)
+xpSplitId = xpTypedId (split "id")
+
+xpSplitAccountId :: PU [XT.Node] (TypedId PTSplitAccount)
+xpSplitAccountId = xpTypedId (split "account")
+
+xpAccountParentId :: PU [XT.Node] (TypedId PTAccountParent)
+xpAccountParentId = xpTypedId (act "parent")
+
+xpSpaceId :: PU [XT.Node] (TypedId PTSpace)
+xpSpaceId =
+    xpWrap
+        (uncurry TypedId)
+        (\(TypedId space id) -> (space, id))
+        (xp2Tuple (xpElemText (cmdty "space")) (xpElemText (cmdty "id")))
+
+--
+-- Phantom type
+--
+data SAccount
+data SBook
+data STransaction
+data SSplit
+
+--
+-- TODO: Remove access to *This* one so users can't break types
+-- TODO: any way we can make this less rendundant (we are wrapping a list
+-- of slot with a type....) (Can we make the slots itself typed)
+--
+data TypedSlots t = TypedSlots [Slot]
+    deriving (Show, Eq)
+
+--
+-- Ways to create each phantom type
+--
+sAccount :: [Slot] -> TypedSlots SAccount
+sAccount = TypedSlots
+sBook :: [Slot] -> TypedSlots SBook
+sBook = TypedSlots
+sTransaction :: [Slot] -> TypedSlots STransaction
+sTransaction = TypedSlots
+sSplit :: [Slot] -> TypedSlots SSplit
+sSplit = TypedSlots
+
+--
+-- Generic TypedSlots
+--
+xpTypedSlots :: XT.Name -> PU [XT.Node] (TypedSlots t)
+xpTypedSlots name =
+    xpWrap
+        TypedSlots
+        (\(TypedSlots slot) -> (slot))
+        (xpElemNodes name (xpList xpSlot))
+
+xpAccountSlots :: PU [XT.Node] (TypedSlots SAccount)
+xpAccountSlots = xpTypedSlots (act "slots")
+xpBookSlots :: PU [XT.Node] (TypedSlots SBook)
+xpBookSlots = xpTypedSlots (book "slots")
+xpTransactionSlots :: PU [XT.Node] (TypedSlots STransaction)
+xpTransactionSlots = xpTypedSlots (trn "slots")
+xpSplitSlots :: PU [XT.Node] (TypedSlots SSplit)
+xpSplitSlots = xpTypedSlots (split "slots")
+
+
+
+
 
 -- TODO: make this handle <gdata> as well
 data Date = Date
@@ -385,13 +450,6 @@ xpBooks =
     countDataNode (XT.NodeElement (XT.Element{XT.elementName=XT.Name{XT.nameLocalName="count-data"}})) = True
     countDataNode _ = False
 
-xpBookId :: PU [XT.Node] BookId
-xpBookId =
-    xpWrap
-        (uncurry BookId)
-        (\(BookId idType idValue) -> (idType, idValue))
-        (xpElem (book "id") (xpAttr "type" xpText) (xpContent xpText))
-
 xpCommodity :: PU [XT.Node] Commodity
 xpCommodity =
     xpWrap
@@ -410,13 +468,6 @@ xpCommodity =
                 (xpOption (xpElemBlank (cmdty "quote_tz")))
             )
         )
-
-xpSpaceId :: PU [XT.Node] SpaceId
-xpSpaceId =
-    xpWrap
-        (uncurry SpaceId)
-        (\(SpaceId space id) -> (space, id))
-        (xp2Tuple (xpElemText (cmdty "space")) (xpElemText (cmdty "id")))
 
 xpPriceDb :: PU [XT.Node] PriceDb
 xpPriceDb =
@@ -444,20 +495,6 @@ xpPrice =
             )
         )
 
-xpPriceId :: PU [XT.Node] PriceId
-xpPriceId =
-    xpWrap
-        (uncurry PriceId)
-        (\(PriceId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem (price "id") (xpAttr "type" xpText) (xpContent xpText))
-
-xpBudgetId :: PU [XT.Node] BudgetId
-xpBudgetId =
-    xpWrap
-        (uncurry BudgetId)
-        (\(BudgetId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem (bgt "id") (xpAttr "type" xpText) (xpContent xpText))
-
 xpDate :: PU [XT.Node] Date
 xpDate =
     xpWrap
@@ -468,40 +505,9 @@ xpDate =
             (xpOption (xpElemText (ts "ns")))
         )
 
-xpAccountId :: PU [XT.Node] AccountId
-xpAccountId =
-    xpWrap
-        (uncurry AccountId)
-        (\(AccountId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem (act "id") (xpAttr "type" xpText) (xpContent xpText))
 
-xpTransactionId :: PU [XT.Node] TransactionId
-xpTransactionId =
-    xpWrap
-        (uncurry TransactionId)
-        (\(TransactionId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem (trn "id") (xpAttr "type" xpText) (xpContent xpText))
 
-xpSplitId :: PU [XT.Node] SplitId
-xpSplitId =
-    xpWrap
-        (uncurry SplitId)
-        (\(SplitId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem (split "id") (xpAttr "type" xpText) (xpContent xpText))
 
-xpSplitAccountId :: PU [XT.Node] SplitAccountId
-xpSplitAccountId =
-    xpWrap
-        (uncurry SplitAccountId)
-        (\(SplitAccountId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem (split "account") (xpAttr "type" xpText) (xpContent xpText))
-
-xpAccountParentId :: PU [XT.Node] AccountParentId
-xpAccountParentId =
-    xpWrap
-        (uncurry AccountParentId)
-        (\(AccountParentId pIdType pIdValue) -> (pIdType, pIdValue))
-        (xpElem (act "parent") (xpAttr "type" xpText) (xpContent xpText))
 
 xpAccount :: PU [XT.Node] Account
 xpAccount =
@@ -524,60 +530,6 @@ xpAccount =
                 )
             )
         )
-
-xpAccountSlots :: PU [XT.Node] AccountSlots
-xpAccountSlots =
-    xpWrap
-        AccountSlots
-        (\(AccountSlots slot) -> (slot))
-        (xpElemNodes (act "slots") (xpList xpSlot))
-
-xpBookSlots :: PU [XT.Node] BookSlots
-xpBookSlots =
-    xpWrap
-        BookSlots
-        (\(BookSlots slot) -> (slot))
-        (xpElemNodes (book "slots") (xpList xpSlot))
-
-xpTransactionSlots :: PU [XT.Node] TransactionSlots
-xpTransactionSlots =
-    xpWrap
-        TransactionSlots
-        (\(TransactionSlots slot) -> (slot))
-        (xpElemNodes (trn "slots") (xpList xpSlot))
-
-xpSplitSlots :: PU [XT.Node] SplitSlots
-xpSplitSlots =
-    xpWrap
-        SplitSlots
-        (\(SplitSlots slot) -> (slot))
-        (xpElemNodes (split "slots") (xpList xpSlot))
-
-xpSlot :: PU [XT.Node] Slot
-xpSlot =
-    xpWrap
-        (\(sKey, (sType, sValue)) -> Slot sKey sType sValue)
-        (\(Slot sKey sType sValue) -> (sKey, (sType, sValue)))
-        (xpElemNodes "slot"
-            (xp2Tuple
-                (xpElemText (slot "key"))
-                (xpElem (slot "value") (xpAttr "type" xpText) xpSlotValue)
-            )
-        )
-
--- NOTE: order dependent (text, then gdate, then finally list)
-xpSlotValue :: PU [XT.Node] SlotValue
-xpSlotValue =
-    xpAlt svSel
-        [ xpWrap SVText  (\(SVText x) -> (x)) (xpContent xpText)
-        , xpWrap SVGdate (\(SVGdate x) -> (x)) (xpElemText "gdate")
-        , xpWrap SVSlot  (\(SVSlot x) -> (x)) (xpList xpSlot)
-        ]
-  where
-    svSel :: SlotValue -> Int
-    svSel (SVText _)  = 0
-    svSel (SVGdate _) = 1
-    svSel (SVSlot _)  = 2
 
 xpTransaction :: PU [XT.Node] Transaction
 xpTransaction =
@@ -650,6 +602,33 @@ xpRecurrence =
 
 xpVersion :: PU [Attribute] T.Text
 xpVersion = xpAttr "version" xpText
+
+
+xpSlot :: PU [XT.Node] Slot
+xpSlot =
+    xpWrap
+        (\(sKey, (sType, sValue)) -> Slot sKey sType sValue)
+        (\(Slot sKey sType sValue) -> (sKey, (sType, sValue)))
+        (xpElemNodes "slot"
+            (xp2Tuple
+                (xpElemText (slot "key"))
+                (xpElem (slot "value") (xpAttr "type" xpText) xpSlotValue)
+            )
+        )
+
+-- NOTE: order dependent (text, then gdate, then finally list)
+xpSlotValue :: PU [XT.Node] SlotValue
+xpSlotValue =
+    xpAlt svSel
+        [ xpWrap SVText  (\(SVText x) -> (x)) (xpContent xpText)
+        , xpWrap SVGdate (\(SVGdate x) -> (x)) (xpElemText "gdate")
+        , xpWrap SVSlot  (\(SVSlot x) -> (x)) (xpList xpSlot)
+        ]
+  where
+    svSel :: SlotValue -> Int
+    svSel (SVText _)  = 0
+    svSel (SVGdate _) = 1
+    svSel (SVSlot _)  = 2
 
 
 --
