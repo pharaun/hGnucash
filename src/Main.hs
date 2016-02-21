@@ -38,7 +38,10 @@ parentAllAccounts xml = do
 
     mapM_ showAccountList parents
 
-
+showAccountFull am field = do
+    if isNothing field
+    then mapM_ (\(_, a) -> print a >> putStrLn "") $ Map.toList am
+    else mapM_ (\(_, a) -> print ((fromJust field) a)) $ Map.toList am
 
 
 

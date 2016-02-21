@@ -12,6 +12,7 @@ module Types
     , PriceDb (..)
     , Price (..)
     , Version (..)
+    , AccountType (..)
     , SlotValue (..)
     , Slot (..)
     , Date (..)
@@ -136,7 +137,7 @@ data Account = Account
     { aVersion :: Version
     , aName :: Text
     , aGuid :: TypedId PTAccount
-    , aType :: Text
+    , aType :: AccountType
     , aCommodity :: Maybe (TypedId PTSpace)
     , aCommodityScu :: Maybe Integer
     , aDescription :: Maybe Text
@@ -220,6 +221,14 @@ instance Read Version where
         then [(V1, rest)]
         else []
     readsPrec _ _ = []
+
+--
+-- Account Types
+-- * In capital to enable auto show/read derieving
+--
+data AccountType = ASSET | BANK | CREDIT | EQUITY | EXPENSE | INCOME | LIABILITY | ROOT | STOCK
+    deriving (Eq, Show, Read)
+
 
 --
 -- TODO: make these more useful/strict (ie frame, integer, text, etc)

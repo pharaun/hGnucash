@@ -136,7 +136,7 @@ xpAccount =
                 (xp3Tuple
                     (xpElemText (act "name"))
                     xpAccountId
-                    (xpElemText (act "type"))
+                    xpAccountType
                 )
                 (xp5Tuple
                     (xpOption (xpElemNodes (act "commodity") xpSpaceId))
@@ -219,3 +219,6 @@ xpRecurrence =
 
 xpVersion :: PU [Attribute] Version
 xpVersion = xpAttr "version" xpPrim
+
+xpAccountType :: PU [XT.Node] AccountType
+xpAccountType = xpElemNodes (act "type") $ xpContent xpPrim

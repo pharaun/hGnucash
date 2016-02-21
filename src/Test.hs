@@ -39,10 +39,10 @@ gnuData =
                     "579/3737"
                 ]
             )
-            [ Account V200 "Foobar" (ptAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d") "ROOT" Nothing Nothing Nothing Nothing Nothing
+            [ Account V200 "Foobar" (ptAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d") ROOT Nothing Nothing Nothing Nothing Nothing
             , Account V200 "Foobar"
                 (ptAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d")
-                "BANK"
+                BANK
                 (Just $ ptSpace "ISO4217" "USD")
                 (Just 100)
                 (Just "Unknown")
