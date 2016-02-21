@@ -110,7 +110,7 @@ data GnuCashBook = GnuCashBook
     { version :: Version
     , guid :: TypedId PTBook
     , bookSlots :: Maybe (TypedSlots SBook)
-    , count :: Map.Map Text Integer -- CountData basically
+    , count :: Map.Map Text Integer -- CountData basically -- Good for validation of other stuff
     , commoditys :: [Commodity]
     , priceDb :: Maybe PriceDb -- TODO: outta to be a List perhaps?
     , accounts :: [Account]

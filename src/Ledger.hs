@@ -3,8 +3,10 @@ module Ledger
     ( accountMap
     , findParents
 
+    , transactionLine
     ) where
 
+import Data.Maybe
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
@@ -35,11 +37,13 @@ inspectParentId a =
                        then trace ("Account IdType not guid! - " ++ (T.unpack $ aName a)) (idValue p)
                        else (idValue p)
 
+inspectAccountId :: Split -> T.Text
+inspectAccountId s = if (idType $ spAccountId s) /= (T.pack "guid")
+                     then trace ("Account IdType not guid! - " ++ (show $ sMemo s)) (idValue $ spAccountId s)
+                     else (idValue $ spAccountId s)
+
 --
--- TODO:
 -- * Map of Account Id -> Account (parent/account lookup)
--- * Code to find all parent of an account
--- * Sanity Checks
 --
 
 -- Text is idValue out of TypedId
@@ -51,6 +55,7 @@ accountMap accounts = foldl foldAccount Map.empty accounts
 
 
 -- List is ordered from parent to child, does it include the given Account?
+-- * Code to find all parent of an account
 --  * For now it does not
 findParents :: Account -> Map T.Text Account -> [Account]
 findParents account am =
@@ -61,53 +66,44 @@ findParents account am =
             Just pa -> pa : findParents pa am
 
 
---data Account = Account
---    { aVersion :: Text -- TODO: ADT this
---    , aName :: Text
---    , aGuid :: TypedId PTAccount
---    , aType :: Text
---    , aCommodity :: Maybe (TypedId PTSpace)
---    , aCommodityScu :: Maybe Integer
---    , aDescription :: Maybe Text
---    , aSlots :: Maybe (TypedSlots SAccount)
---    , aParent :: Maybe (TypedId PTAccountParent)
---    } deriving (Show, Eq)
 --
---data GnuCashBook = GnuCashBook
---    { version :: Text -- TODO: ADT this
---    , guid :: TypedId PTBook
---    , bookSlots :: Maybe (TypedSlots SBook)
---    , count :: Map.Map Text Integer -- CountData basically
---    , commoditys :: [Commodity]
---    , priceDb :: Maybe PriceDb -- TODO: outta to be a List perhaps?
---    , accounts :: [Account]
---    , transaction :: [Transaction]
---    , budget :: Maybe Budget
---    } deriving (Show, Eq)
+-- Transaction process
 --
----- Core Type (Cannot access constructors for this)
---data TypedId t = TypedId
---    { idType :: Text
---    , idValue :: Text -- TODO: ADT this value/type
---    } deriving (Show, Eq)
---
---
---
---data Budget = Budget
---    { bVersion :: Text -- TODO: ADT this
---    , bGuid :: TypedId PTBudget
---    , bName :: Text
---    , bNumPeriods :: Integer
---    , bRecurrence :: Recurrence
---    } deriving (Show, Eq)
---
---data Recurrence = Recurrence
---    { rVersion :: Text -- TODO: ADT this
---    , rMulti :: Integer
---    , rPeriodType :: Text
---    , rStart :: Text -- TODO: date (gdate)
---    } deriving (Show, Eq)
---
+transactionLine :: Transaction -> Map T.Text Account -> IO ()
+transactionLine t am = do
+    putStr "Description: "
+    print $ tDescription t
+    putStr "\tCurrency: "
+    print $ tCurrency t
+    putStr "\tPosted: "
+    print $ tPosted t
+    putStr "\tEntered: "
+    print $ tEntered t
+
+    putStrLn "\tAccount Splits:"
+    mapM_ (\s -> do
+        putStr "\t\tMemo: "
+        print $ sMemo s
+        putStr "\t\tAction: "
+        print $ sAction s
+        putStr "\t\tspReconciledState: "
+        print $ spReconciledState s
+        putStr "\t\tValue: "
+        print $ spValue s
+        putStr "\t\tQuanity: "
+        print $ spQuantity s
+
+        let accountId = inspectAccountId s
+        let account = Map.lookup accountId am
+        let account' = fromJust account
+
+        let parents = findParents account' am
+
+        putStr "\t\tAccounts:"
+        putStrLn $ show $ reverse $ map (T.unpack . aName) (account' : parents)
+        ) (tSplits t)
+
+
 --data Transaction = Transaction
 --    { tVersion :: Text -- TODO: ADT this
 --    , tGuid :: TypedId PTTransaction
@@ -131,6 +127,13 @@ findParents account am =
 --    , spAccountId :: TypedId PTSplitAccount
 --    , spSlots :: Maybe (TypedSlots SSplit)
 --    } deriving (Show, Eq)
+--
+---- Core Type (Cannot access constructors for this)
+--data TypedId t = TypedId
+--    { idType :: Text
+--    , idValue :: Text -- TODO: ADT this value/type
+--    } deriving (Show, Eq)
+--
 --
 --data Commodity = Commodity
 --    { cVersion :: Text -- TODO: ADT this
@@ -158,42 +161,8 @@ findParents account am =
 --    , pValue :: Text -- TODO: convert to rational
 --    } deriving (Show, Eq)
 --
-----
----- TODO: make these more useful/strict (ie frame, integer, text, etc)
-----
---data SlotValue = SVText Text
---               | SVSlot [Slot]
---               | SVGdate Text -- TODO: date
---               deriving (Show, Eq)
---
---data Slot = Slot
---    { sKey :: Text
---    , sType :: Text -- TODO: dedup into SlotValue (for the type info)
---    , sValue :: SlotValue
---    } deriving (Show, Eq)
---
 ---- TODO: make this handle <gdata> as well
 --data Date = Date
 --    { date :: Text -- TODO: proper type/parsing
 --    , ns :: Maybe Text -- TODO: proper type/parsing (no idea what a ns is)
---    } deriving (Show, Eq)
---
----- Core Type (Cannot access constructors for this)
----- TODO: any way we can make this less rendundant (we are wrapping a list
-----       of slot with a type....) (Can we make the slots itself typed)
---data TypedSlots t = TypedSlots
---    { slots :: [Slot]
---    }
---    deriving (Show, Eq)
---
---
---
---data GnuCash = GnuCash
---    { countBook :: CountData
---    , books :: [GnuCashBook]
---    } deriving (Show, Eq)
---
---data CountData = CountData
---    { countType :: Text
---    , countAmount :: Integer
 --    } deriving (Show, Eq)
