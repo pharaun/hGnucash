@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ledger
     ( accountMap
+    , findParents
 
     ) where
 
@@ -16,6 +17,24 @@ import Debug.Trace
 
 import Types
 
+
+--
+-- Helper functions
+--
+inspectId :: Account -> T.Text
+inspectId a = if (idType $ aGuid a) /= (T.pack "guid")
+              then trace ("Account IdType not guid! - " ++ (T.unpack $ aName a)) (idValue $ aGuid a)
+              else (idValue $ aGuid a)
+
+inspectParentId :: Account -> Maybe T.Text
+inspectParentId a =
+    case (aParent a) of
+        Nothing -> Nothing
+        Just p  -> Just $
+                       if (idType p) /= (T.pack "guid")
+                       then trace ("Account IdType not guid! - " ++ (T.unpack $ aName a)) (idValue p)
+                       else (idValue p)
+
 --
 -- TODO:
 -- * Map of Account Id -> Account (parent/account lookup)
@@ -30,14 +49,16 @@ accountMap accounts = foldl foldAccount Map.empty accounts
     foldAccount :: Map T.Text Account -> Account -> Map T.Text Account
     foldAccount m a = Map.insert (inspectId a) a m
 
-    inspectId :: Account -> T.Text
-    inspectId a = if (idType $ aGuid a) /= (T.pack "guid")
-                  then trace ("Account IdType not guid! - " ++ (T.unpack $ aName a)) (idValue $ aGuid a)
-                  else (idValue $ aGuid a)
 
--- List is ordered from parent to child
+-- List is ordered from parent to child, does it include the given Account?
+--  * For now it does not
 findParents :: Account -> Map T.Text Account -> [Account]
-findParents = undefined
+findParents account am =
+    case (inspectParentId account) of
+        Nothing  -> []
+        Just pid -> case (Map.lookup pid am) of
+            Nothing -> trace ("Account parent not found in map! - " ++ (T.unpack $ aName account)) []
+            Just pa -> pa : findParents pa am
 
 
 --data Account = Account

@@ -11,6 +11,7 @@ module Types
     , Commodity (..)
     , PriceDb (..)
     , Price (..)
+    , Version (..)
     , SlotValue (..)
     , Slot (..)
     , Date (..)
@@ -90,6 +91,9 @@ import Data.XML.Pickle
 import qualified Data.Map.Lazy as Map
 import Data.Text (Text)
 
+-- Lazy debugging
+import Debug.Trace
+
 
 data GnuCash = GnuCash
     { countBook :: CountData
@@ -102,7 +106,7 @@ data CountData = CountData
     } deriving (Show, Eq)
 
 data GnuCashBook = GnuCashBook
-    { version :: Text -- TODO: ADT this
+    { version :: Version
     , guid :: TypedId PTBook
     , bookSlots :: Maybe (TypedSlots SBook)
     , count :: Map.Map Text Integer -- CountData basically
@@ -114,7 +118,7 @@ data GnuCashBook = GnuCashBook
     } deriving (Show, Eq)
 
 data Budget = Budget
-    { bVersion :: Text -- TODO: ADT this
+    { bVersion :: Version
     , bGuid :: TypedId PTBudget
     , bName :: Text
     , bNumPeriods :: Integer
@@ -122,14 +126,14 @@ data Budget = Budget
     } deriving (Show, Eq)
 
 data Recurrence = Recurrence
-    { rVersion :: Text -- TODO: ADT this
+    { rVersion :: Version
     , rMulti :: Integer
     , rPeriodType :: Text
     , rStart :: Text -- TODO: date (gdate)
     } deriving (Show, Eq)
 
 data Account = Account
-    { aVersion :: Text -- TODO: ADT this
+    { aVersion :: Version
     , aName :: Text
     , aGuid :: TypedId PTAccount
     , aType :: Text
@@ -141,7 +145,7 @@ data Account = Account
     } deriving (Show, Eq)
 
 data Transaction = Transaction
-    { tVersion :: Text -- TODO: ADT this
+    { tVersion :: Version
     , tGuid :: TypedId PTTransaction
     , tCurrency :: (TypedId PTSpace)
     , tNum :: Maybe (Maybe Integer) -- No idea what this is
@@ -165,7 +169,7 @@ data Split = Split
     } deriving (Show, Eq)
 
 data Commodity = Commodity
-    { cVersion :: Text -- TODO: ADT this
+    { cVersion :: Version
     , cSId :: TypedId PTSpace
     , cName :: Maybe Text
     , cXCode :: Maybe Text
@@ -176,7 +180,7 @@ data Commodity = Commodity
     } deriving (Show, Eq)
 
 data PriceDb = PriceDb
-    { pVersion :: Text -- TODO: ADT this
+    { pVersion :: Version
     , prices :: [Price]
     } deriving (Show, Eq)
 
@@ -189,6 +193,33 @@ data Price = Price
     , pType :: Maybe Text
     , pValue :: Text -- TODO: convert to rational
     } deriving (Show, Eq)
+
+--
+-- Version
+--  * Custom read/show because of 2.0.0 -> V200 for ex
+--
+data Version = V200 | V100 | V1
+    deriving (Eq)
+
+instance Show Version where
+    show V1   = "1"
+    show V100 = "1.0.0"
+    show V200 = "2.0.0"
+
+instance Read Version where
+    readsPrec _ (v1:'.':v2:'.':v3:rest) =
+        if (v1 == '2' && v2 == '0' && v3 == '0')
+        then [(V200, rest)]
+        else
+            if (v1 == '1' && v2 == '0' && v3 == '0')
+            then [(V100, rest)]
+            else trace (show $ v1:'.':v2:'.':v3:[]) []
+    -- V1 is needed for priceDB for a few versions of the file
+    readsPrec _ (v1:rest) =
+        if v1 == '1'
+        then [(V1, rest)]
+        else []
+    readsPrec _ _ = []
 
 --
 -- TODO: make these more useful/strict (ie frame, integer, text, etc)

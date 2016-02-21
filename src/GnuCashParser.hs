@@ -217,5 +217,5 @@ xpRecurrence =
             )
         )
 
-xpVersion :: PU [Attribute] Text
-xpVersion = xpAttr "version" xpText
+xpVersion :: PU [Attribute] Version
+xpVersion = xpAttr "version" xpPrim

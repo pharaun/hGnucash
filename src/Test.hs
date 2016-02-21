@@ -19,7 +19,7 @@ import GnuCashParser
 gnuData :: GnuCash
 gnuData =
     GnuCash (CountData "book" 1)
-        [ GnuCashBook "2.0.0"
+        [ GnuCashBook V200
             (ptBook "guid" "3d2281ed92e804792714679c1b0cab5c")
             (Just $ sBook
                 [ Slot "placeholder" "string" (SVText "true")
@@ -27,8 +27,8 @@ gnuData =
                 ]
             )
             (Map.fromList [("account", 49), ("transaction", 903)])
-            [Commodity "2.0.0" (ptSpace "ISO4217" "USD") (Just "Yelp") (Just "US9858171054") (Just 1) Nothing (Just "currency") (Just ())]
-            (Just $ PriceDb "2.0.0"
+            [Commodity V200 (ptSpace "ISO4217" "USD") (Just "Yelp") (Just "US9858171054") (Just 1) Nothing (Just "currency") (Just ())]
+            (Just $ PriceDb V1
                 [ Price
                     (ptPrice "guid" "c6e71724e737f4e5c7f5e1eaa60a1e32")
                     (ptSpace "ISO4217" "CNY")
@@ -39,8 +39,8 @@ gnuData =
                     "579/3737"
                 ]
             )
-            [ Account "2.0.0" "Foobar" (ptAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d") "ROOT" Nothing Nothing Nothing Nothing Nothing
-            , Account "2.0.0" "Foobar"
+            [ Account V200 "Foobar" (ptAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d") "ROOT" Nothing Nothing Nothing Nothing Nothing
+            , Account V200 "Foobar"
                 (ptAccount "guid" "6149d1c96c021e5f5d0ff886718b7f7d")
                 "BANK"
                 (Just $ ptSpace "ISO4217" "USD")
@@ -62,7 +62,7 @@ gnuData =
                 )
                 (Just $ ptAccountParent "guid" "ff9490d50f87adaa01bdaec2119f8a98")
             ]
-            [ Transaction "2.0.0"
+            [ Transaction V100
                 (ptTransaction "guid" "b9bbc2305a2be67bd1e16c283a6cd1ab")
                 (ptSpace "ISO4217" "USD")
                 (Just $ Just 149)
@@ -98,8 +98,8 @@ gnuData =
                     Nothing
                 ]
             ]
-            (Just $ Budget "2.0.0" (ptBudget "guid" "ce3f353604f5b3d4f6a292bf598eb2d1") "Unnamed Budget" 12
-                (Recurrence "1.0.0" 1 "month" "2013-11-01")
+            (Just $ Budget V200 (ptBudget "guid" "ce3f353604f5b3d4f6a292bf598eb2d1") "Unnamed Budget" 12
+                (Recurrence V100 1 "month" "2013-11-01")
             )
         ]
 
